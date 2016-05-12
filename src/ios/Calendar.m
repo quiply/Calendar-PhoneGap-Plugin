@@ -257,6 +257,96 @@
 
 }
 
+- (void) modifyEventWithId:(CDVInvokedUrlCommand*)command {
+  NSDictionary* options   = [command.arguments objectAtIndex:0];
+  NSString* calEventID    = [options objectForKey:@"id"];
+  NSString* ntitle        = [options objectForKey:@"title"];
+  NSString* nlocation     = [options objectForKey:@"location"];
+  NSString* nnotes        = [options objectForKey:@"notes"];
+  NSNumber* nstartTime    = [options objectForKey:@"startTime"];
+  NSNumber* nendTime      = [options objectForKey:@"endTime"];
+
+  NSDateFormatter *df = [[NSDateFormatter alloc] init];
+  [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
+
+  [self.commandDelegate runInBackground: ^{
+      // Find match
+      EKEvent *theEvent = [self.eventStore calendarItemWithIdentifier:calEventID];
+
+      CDVPluginResult *pluginResult = nil;
+      if (theEvent != nil) {
+          NSDictionary* calOptions = [options objectForKey:@"options"];
+          NSString* ncalendarName = [calOptions objectForKey:@"calendarName"];
+
+          if (ncalendarName != (id)[NSNull null]) {
+            theEvent.calendar = [self findEKCalendar:ncalendarName];
+            if (theEvent.calendar == nil) {
+              pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Could not find calendar passed in newOptions object"];
+              [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+              return;
+            }
+          }
+
+          if (ntitle) {
+            theEvent.title = ntitle;
+          }
+          if (nlocation) {
+            theEvent.location = nlocation;
+          }
+          if (nnotes) {
+            theEvent.notes = nnotes;
+          }
+          if (nstartTime) {
+            NSTimeInterval _nstartInterval = [nstartTime doubleValue] / 1000; // strip millis
+            theEvent.startDate = [NSDate dateWithTimeIntervalSince1970:_nstartInterval];
+          }
+          if (nendTime) {
+            NSTimeInterval _nendInterval = [nendTime doubleValue] / 1000; // strip millis
+            theEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval];
+          }
+
+          NSString* recurrence = [calOptions objectForKey:@"recurrence"];
+          NSNumber* intervalAmount = [calOptions objectForKey:@"recurrenceInterval"];
+
+          if (recurrence != (id)[NSNull null]) {
+            EKRecurrenceRule *rule = [[EKRecurrenceRule alloc] initRecurrenceWithFrequency: [self toEKRecurrenceFrequency:recurrence]
+                                                                                  interval: intervalAmount.integerValue
+                                                                                       end: nil];
+            NSString* recurrenceEndTime = [calOptions objectForKey:@"recurrenceEndTime"];
+            if (recurrenceEndTime != nil) {
+              NSTimeInterval _recurrenceEndTimeInterval = [recurrenceEndTime doubleValue] / 1000; // strip millis
+              NSDate *myRecurrenceEndDate = [NSDate dateWithTimeIntervalSince1970:_recurrenceEndTimeInterval];
+              EKRecurrenceEnd *end = [EKRecurrenceEnd recurrenceEndWithEndDate:myRecurrenceEndDate];
+              rule.recurrenceEnd = end;
+            }
+            [theEvent addRecurrenceRule:rule];
+          }
+          NSString* url = [calOptions objectForKey:@"url"];
+          if (url != (id)[NSNull null]) {
+            NSURL* myUrl = [NSURL URLWithString:url];
+            theEvent.URL = myUrl;
+          }
+
+          // Now save the new details back to the store
+          NSError *error = nil;
+          [self.eventStore saveEvent:theEvent span:EKSpanThisEvent error:&error];
+
+
+          // Check error code + return result
+          if (error) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.userInfo.description];
+          } else {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:theEvent.calendarItemIdentifier];
+          }
+      } else {
+        // Otherwise return a no result error (could be more than 1, but not a biggie)
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_NO_RESULT];
+      }
+      [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }];
+
+}
+
 
 - (void) deleteEventFromCalendar:(CDVInvokedUrlCommand*)command
                        calendar: (EKCalendar *) calendar {
