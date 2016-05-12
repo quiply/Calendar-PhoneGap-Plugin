@@ -381,6 +381,7 @@ public abstract class AbstractCalendarAccessor {
     for (Event instance : instances) {
       Event event = eventMap.get(instance.eventId);
       if (event != null) {
+        instance.id = instance.eventId; // In the merged event we need the event id, not the instance id
         instance.message = event.message;
         instance.location = event.location;
         instance.title = event.title;
