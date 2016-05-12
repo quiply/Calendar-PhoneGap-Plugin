@@ -409,11 +409,87 @@ public abstract class AbstractCalendarAccessor {
     return nrDeletedRecords > 0;
   }
 
+  public boolean deleteEventWithId(int id, Uri eventsUri) {
+    Log.d(LOG_TAG, "Delete event with ID " + id);
+
+    ContentResolver resolver = this.cordova.getActivity().getApplicationContext().getContentResolver();
+    Uri eventUri = ContentUris.withAppendedId(eventsUri, id);
+    int rows = resolver.delete(eventUri, null, null);
+
+    if (rows > 0) {
+      Log.d(LOG_TAG, "Events deleted, count: " + rows);
+      return true;
+    } else {
+      Log.d(LOG_TAG, "No events found and no event found with id: " + id);
+      return false;
+    }
+  }
+
   public String createEvent(Uri eventsUri, String title, long startTime, long endTime, String description,
                             String location, Long firstReminderMinutes, Long secondReminderMinutes,
                             String recurrence, int recurrenceInterval, Long recurrenceEndTime, Integer calendarId, String url) {
     ContentResolver cr = this.cordova.getActivity().getContentResolver();
+    ContentValues values = generateEventValues(title, startTime, endTime, description, location, recurrence,
+            recurrenceInterval, recurrenceEndTime, calendarId, url);
+    values.put(Events.HAS_ALARM, firstReminderMinutes > -1 || secondReminderMinutes > -1 ? 1 : 0);
+
+    // runtime exceptions are dealt with by the caller
+    Uri uri = cr.insert(eventsUri, values);
+    String createdEventID = uri.getLastPathSegment();
+    Log.d(LOG_TAG, "Created event with ID " + createdEventID);
+
+    try {
+      if (firstReminderMinutes > -1) {
+        ContentValues reminderValues = new ContentValues();
+        reminderValues.put("event_id", Long.parseLong(uri.getLastPathSegment()));
+        reminderValues.put("minutes", firstReminderMinutes);
+        reminderValues.put("method", 1);
+        cr.insert(Uri.parse(CONTENT_PROVIDER + CONTENT_PROVIDER_PATH_REMINDERS), reminderValues);
+      }
+
+      if (secondReminderMinutes > -1) {
+        ContentValues reminderValues = new ContentValues();
+        reminderValues.put("event_id", Long.parseLong(uri.getLastPathSegment()));
+        reminderValues.put("minutes", secondReminderMinutes);
+        reminderValues.put("method", 1);
+        cr.insert(Uri.parse(CONTENT_PROVIDER + CONTENT_PROVIDER_PATH_REMINDERS), reminderValues);
+      }
+    } catch (Exception e) {
+      Log.e(LOG_TAG, "Creating reminders failed, ignoring since the event was created.", e);
+    }
+    return createdEventID;
+  }
+
+  public boolean modifyEventWithId(
+          int id, Uri eventsUri,
+          String title, long startTime, long endTime, String description,
+          String location, String recurrence, int recurrenceInterval, Long recurrenceEndTime, Integer calendarId,
+          String url) {
+
+    Log.d(LOG_TAG, "Update event with ID " + id);
+
+    ContentResolver resolver = this.cordova.getActivity().getApplicationContext().getContentResolver();
+
+    ContentValues values = generateEventValues(title, startTime, endTime, description, location, recurrence,
+            recurrenceInterval, recurrenceEndTime, calendarId, url);
+
+    Uri updateUri = ContentUris.withAppendedId(eventsUri, id);
+    int rows = resolver.update(updateUri, values, null, null);
+
+    if (rows > 0) {
+      Log.d(LOG_TAG, "Events updated: " + rows);
+      return true;
+    } else {
+      Log.d(LOG_TAG, "No events found and no event found with id: " + id);
+      return false;
+    }
+  }
+
+  private ContentValues generateEventValues(String title, long startTime, long endTime, String description,
+                                            String location, String recurrence, int recurrenceInterval,
+                                            Long recurrenceEndTime, Integer calendarId, String url) {
     ContentValues values = new ContentValues();
+
     final boolean allDayEvent = isAllDayEvent(new Date(startTime), new Date(endTime));
     if (allDayEvent) {
       //all day events must be in UTC time zone per Android specification, getOffset accounts for daylight savings time
@@ -436,8 +512,9 @@ public abstract class AbstractCalendarAccessor {
       }
     }
     values.put(Events.DESCRIPTION, description);
-    values.put(Events.HAS_ALARM, firstReminderMinutes > -1 || secondReminderMinutes > -1 ? 1 : 0);
-    values.put(Events.CALENDAR_ID, calendarId);
+    if (calendarId != null) {
+      values.put(Events.CALENDAR_ID, calendarId);
+    }
     values.put(Events.EVENT_LOCATION, location);
 
     if (recurrence != null) {
