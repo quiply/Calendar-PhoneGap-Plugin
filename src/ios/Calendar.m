@@ -277,10 +277,6 @@
   [df setDateFormat:@"yyyy-MM-dd HH:mm:ss"];
 
   [self.commandDelegate runInBackground: ^{
-      NSCalendar *gregorianCalendar = [[NSCalendar alloc]
-                                      initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
-      NSCalendarUnit units = NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
-
       // Find match
       EKEvent *theEvent = [self.eventStore calendarItemWithIdentifier:calEventID];
 
@@ -307,32 +303,13 @@
           if (nnotes) {
             theEvent.notes = nnotes;
           }
-          if (nendTime) {
-            NSTimeInterval _nendInterval = [nendTime doubleValue] / 1000; // strip millis
-            NSDate *myNEndDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval];
-            NSDateComponents *nendDateComponents = [gregorianCalendar components:units fromDate:myNEndDate];
-
-            if (nstartTime) {
-                NSTimeInterval _nstartInterval = [nstartTime doubleValue] / 1000; // strip millis
-                NSDate *myNStartDate = [NSDate dateWithTimeIntervalSince1970:_nstartInterval];
-                NSDateComponents *nstartDateComponents = [gregorianCalendar components:units fromDate:myNStartDate];
-
-                if (nstartDateComponents.hour == 0 && nstartDateComponents.minute == 0 && nstartDateComponents.second == 0
-                    && nendDateComponents.hour == 0 && nendDateComponents.minute == 0 && nendDateComponents.second == 0) {
-                    theEvent.allDay = YES;
-                    theEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval - 1];
-                } else {
-                    theEvent.allDay = NO;
-                    theEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval];
-                }
-            } else {
-                theEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval];
-            }
-          }
-          // call after setting endTime because it depends on the allDay property
           if (nstartTime) {
             NSTimeInterval _nstartInterval = [nstartTime doubleValue] / 1000; // strip millis
             theEvent.startDate = [NSDate dateWithTimeIntervalSince1970:_nstartInterval];
+          }
+          if (nendTime) {
+            NSTimeInterval _nendInterval = [nendTime doubleValue] / 1000; // strip millis
+            theEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_nendInterval];
           }
 
           NSString* recurrence = [calOptions objectForKey:@"recurrence"];
@@ -376,7 +353,6 @@
   }];
 
 }
-
 
 - (void) deleteEventFromCalendar:(CDVInvokedUrlCommand*)command
                        calendar: (EKCalendar *) calendar {

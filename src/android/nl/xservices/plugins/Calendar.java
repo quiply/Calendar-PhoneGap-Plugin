@@ -502,6 +502,41 @@ public class Calendar extends CordovaPlugin {
     }
   }
 
+  private void deleteEventWithId(JSONArray args) {
+    if (args.length() == 0) {
+      System.err.println("Exception: No Arguments passed");
+      return;
+    }
+
+    // note that if the dev didn't call requestWritePermission before calling this method and calendarPermissionGranted returns false,
+    // the app will ask permission and this method needs to be invoked again (done for backward compat).
+    if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
+      requestWritePermission();
+      this.callback.error("Please allow Write access to the Calendar and try again.");
+      return;
+    }
+
+    try {
+      final JSONObject jsonFilter = args.getJSONObject(0);
+
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+
+          boolean deleteResult = getCalendarAccessor().deleteEventWithId(
+              jsonFilter.optInt("id"),
+              null);
+          PluginResult res = new PluginResult(PluginResult.Status.OK, deleteResult);
+          res.setKeepCallback(true);
+          callback.sendPluginResult(res);
+        }
+      });
+    } catch (JSONException e) {
+      System.err.println("Exception: " + e.getMessage());
+      callback.error(e.getMessage());
+    }
+  }
+
   private void findEvents(JSONArray args) {
     if (args.length() == 0) {
       System.err.println("Exception: No Arguments passed");
