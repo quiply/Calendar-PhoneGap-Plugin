@@ -33,6 +33,7 @@
 - (void)createEventWithOptions:(CDVInvokedUrlCommand*)command;
 - (void)createEventInteractively:(CDVInvokedUrlCommand*)command;
 - (void)modifyEventWithOptions:(CDVInvokedUrlCommand*)command;
+- (void)modifyEventWithId:(CDVInvokedUrlCommand*)command;
 
 - (void)findEventWithOptions:(CDVInvokedUrlCommand*)command;
 - (void)findAllEventsInNamedCalendar:(CDVInvokedUrlCommand*)command;
