@@ -194,9 +194,6 @@ Calendar.prototype.deleteEvent = function (title, location, notes, startDate, en
 };
 
 Calendar.prototype.deleteEventWithId = function (id, successCallback, errorCallback) {
-  if (!(startDate instanceof Date && endDate instanceof Date)) {
-    errorCallback("startDate and endDate must be JavaScript Date Objects");
-  }
   cordova.exec(successCallback, errorCallback, "Calendar", "deleteEventWithId", [{
     "id": id
   }])
