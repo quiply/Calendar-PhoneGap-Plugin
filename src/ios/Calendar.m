@@ -385,6 +385,32 @@
   }];
 }
 
+- (void) deleteEventWithId:(CDVInvokedUrlCommand*)command {
+
+  NSDictionary* options = [command.arguments objectAtIndex:0];
+  NSString* calEventID  = [options objectForKey:@"id"];
+
+  [self.commandDelegate runInBackground: ^{
+
+    EKEvent *eventToRemove = [self.eventStore calendarItemWithIdentifier:calEventID];
+    CDVPluginResult *pluginResult = nil;
+    if (eventToRemove != nil) {
+      NSError* error = nil;
+      [self.eventStore removeEvent:eventToRemove span:EKSpanThisEvent error:&error];
+
+      if (error != nil) {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:error.userInfo.description];
+      } else {
+        pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"Deleted"];
+      }
+    } else {
+      pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Event not found"];
+    }
+
+    [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+  }];
+}
+
 - (NSArray*) findEKEventsWithTitle: (NSString *)title
                         location: (NSString *)location
                            notes: (NSString *)notes
