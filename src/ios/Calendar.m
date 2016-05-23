@@ -46,9 +46,17 @@
   NSNumber* endTime    = [options objectForKey:@"endTime"];
 
   [self.commandDelegate runInBackground: ^{
+    NSCalendar *gregorianCalendar = [[NSCalendar alloc]
+                                    initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+    NSCalendarUnit units = NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+
     NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
     NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
+    NSDateComponents *startDateComponents = [gregorianCalendar components:units fromDate:myStartDate];
+
     NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
+    NSDate *myEndDate = [NSDate dateWithTimeIntervalSince1970:_endInterval];
+    NSDateComponents *endDateComponents = [gregorianCalendar components:units fromDate:myEndDate];
 
     EKEvent *myEvent = [EKEvent eventWithEventStore: self.eventStore];
     myEvent.title = title;
@@ -56,9 +64,8 @@
     myEvent.notes = notes;
     myEvent.startDate = myStartDate;
 
-    int duration = _endInterval - _startInterval;
-    int moduloDay = duration % (60 * 60 * 24);
-    if (moduloDay == 0) {
+    if (startDateComponents.hour == 0 && startDateComponents.minute == 0 && startDateComponents.second == 0
+        && endDateComponents.hour == 0 && endDateComponents.minute == 0 && endDateComponents.second == 0) {
       myEvent.allDay = YES;
       myEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_endInterval - 1];
     } else {
@@ -585,25 +592,31 @@
   NSString* url = [calOptions objectForKey:@"url"];
 
   [self.commandDelegate runInBackground: ^{
+    NSCalendar *gregorianCalendar = [[NSCalendar alloc]
+                                    initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+    NSCalendarUnit units = NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+
+    NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
+    NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
+    NSDateComponents *startDateComponents = [gregorianCalendar components:units fromDate:myStartDate];
+
+    NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
+    NSDate *myEndDate = [NSDate dateWithTimeIntervalSince1970:_endInterval];
+    NSDateComponents *endDateComponents = [gregorianCalendar components:units fromDate:myEndDate];
+
     EKEvent *myEvent = [EKEvent eventWithEventStore: self.eventStore];
     if (url != (id)[NSNull null]) {
       NSURL* myUrl = [NSURL URLWithString:url];
       myEvent.URL = myUrl;
     }
 
-    NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
-    NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
-
-    NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
-
     myEvent.title = title;
     myEvent.location = location;
     myEvent.notes = notes;
     myEvent.startDate = myStartDate;
 
-    int duration = _endInterval - _startInterval;
-    int moduloDay = duration % (60*60*24);
-    if (moduloDay == 0) {
+    if (startDateComponents.hour == 0 && startDateComponents.minute == 0 && startDateComponents.second == 0
+        && endDateComponents.hour == 0 && endDateComponents.minute == 0 && endDateComponents.second == 0) {
       myEvent.allDay = YES;
       myEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_endInterval-1];
     } else {
@@ -698,19 +711,27 @@
     myEvent.URL = myUrl;
   }
 
+  NSCalendar *gregorianCalendar = [[NSCalendar alloc]
+                                  initWithCalendarIdentifier:NSCalendarIdentifierGregorian];
+  NSCalendarUnit units = NSCalendarUnitYear | NSCalendarUnitMonth | NSCalendarUnitDay | NSCalendarUnitHour | NSCalendarUnitMinute | NSCalendarUnitSecond;
+
   if (startTime != (id)[NSNull null]) {
-  NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
-  NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
+    NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
+    NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
     myEvent.startDate = myStartDate;
   }
 
   if (endTime != (id)[NSNull null]) {
-  NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
+    NSTimeInterval _endInterval = [endTime doubleValue] / 1000; // strip millis
+    NSDate *myEndDate = [NSDate dateWithTimeIntervalSince1970:_endInterval];
+    NSDateComponents *endDateComponents = [gregorianCalendar components:units fromDate:myEndDate];
     if (startTime != (id)[NSNull null]) {
       NSTimeInterval _startInterval = [startTime doubleValue] / 1000; // strip millis
-      int duration = _endInterval - _startInterval;
-      int moduloDay = duration % (60 * 60 * 24);
-      if (moduloDay == 0) {
+      NSDate *myStartDate = [NSDate dateWithTimeIntervalSince1970:_startInterval];
+      NSDateComponents *startDateComponents = [gregorianCalendar components:units fromDate:myStartDate];
+
+      if (startDateComponents.hour == 0 && startDateComponents.minute == 0 && startDateComponents.second == 0
+        && endDateComponents.hour == 0 && endDateComponents.minute == 0 && endDateComponents.second == 0) {
         myEvent.allDay = YES;
         myEvent.endDate = [NSDate dateWithTimeIntervalSince1970:_endInterval - 1];
       } else {
