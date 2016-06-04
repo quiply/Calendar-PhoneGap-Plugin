@@ -52,6 +52,8 @@ public class Calendar extends CordovaPlugin {
   private static final String ACTION_DELETE_CALENDAR = "deleteCalendar";
 
   // write permissions
+  private static final int PERMISSION_REQCODE_DELETE_EVENT_WITH_ID = 98;
+  private static final int PERMISSION_REQCODE_MODIFY_EVENT_WITH_ID = 99;
   private static final int PERMISSION_REQCODE_CREATE_CALENDAR = 100;
   private static final int PERMISSION_REQCODE_DELETE_CALENDAR = 101;
   private static final int PERMISSION_REQCODE_CREATE_EVENT = 102;
@@ -202,8 +204,12 @@ public class Calendar extends CordovaPlugin {
       deleteCalendar(requestArgs);
     } else if (requestCode == PERMISSION_REQCODE_CREATE_EVENT) {
       createEvent(requestArgs);
+    } else if (requestCode == PERMISSION_REQCODE_MODIFY_EVENT_WITH_ID) {
+      modifyEventWithId(requestArgs);
     } else if (requestCode == PERMISSION_REQCODE_DELETE_EVENT) {
       deleteEvent(requestArgs);
+    } else if (requestCode == PERMISSION_REQCODE_DELETE_EVENT_WITH_ID) {
+      deleteEventWithId(requestArgs);
     } else if (requestCode == PERMISSION_REQCODE_FIND_EVENTS) {
       findEvents(requestArgs);
     } else if (requestCode == PERMISSION_REQCODE_LIST_CALENDARS) {
@@ -508,11 +514,8 @@ public class Calendar extends CordovaPlugin {
       return;
     }
 
-    // note that if the dev didn't call requestWritePermission before calling this method and calendarPermissionGranted returns false,
-    // the app will ask permission and this method needs to be invoked again (done for backward compat).
     if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
-      requestWritePermission();
-      this.callback.error("Please allow Write access to the Calendar and try again.");
+      requestWritePermission(PERMISSION_REQCODE_DELETE_EVENT_WITH_ID);
       return;
     }
 
@@ -619,11 +622,8 @@ public class Calendar extends CordovaPlugin {
   }
 
   private void modifyEventWithId(JSONArray args) {
-    // note that if the dev didn't call requestWritePermission before calling this method and calendarPermissionGranted returns false,
-    // the app will ask permission and this method needs to be invoked again (done for backward compat).
     if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
-      requestWritePermission();
-      this.callback.error("Please allow Write access to the Calendar and try again.");
+      requestWritePermission(PERMISSION_REQCODE_MODIFY_EVENT_WITH_ID);
       return;
     }
 
