@@ -199,12 +199,6 @@ Calendar.prototype.deleteEventWithId = function (id, successCallback, errorCallb
   }])
 };
 
-Calendar.prototype.deleteEventWithId = function (id, successCallback, errorCallback) {
-  cordova.exec(successCallback, errorCallback, "Calendar", "deleteEventWithId", [{
-    "id": id
-  }])
-};
-
 Calendar.prototype.deleteEventFromNamedCalendar = function (title, location, notes, startDate, endDate, calendarName, successCallback, errorCallback) {
   cordova.exec(successCallback, errorCallback, "Calendar", "deleteEventFromNamedCalendar", [{
     "title": title,
