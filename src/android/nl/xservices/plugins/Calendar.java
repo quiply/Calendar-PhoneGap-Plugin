@@ -572,6 +572,38 @@ public class Calendar extends CordovaPlugin {
     }
   }
 
+  private void deleteEventWithId(JSONArray args) {
+    if (args.length() == 0) {
+      System.err.println("Exception: No Arguments passed");
+      return;
+    }
+
+    if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
+      requestWritePermission(PERMISSION_REQCODE_DELETE_EVENT_WITH_ID);
+      return;
+    }
+
+    try {
+      final JSONObject jsonFilter = args.getJSONObject(0);
+
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+
+          boolean deleteResult = getCalendarAccessor().deleteEventWithId(
+              jsonFilter.optInt("id"),
+              null);
+          PluginResult res = new PluginResult(PluginResult.Status.OK, deleteResult);
+          res.setKeepCallback(true);
+          callback.sendPluginResult(res);
+        }
+      });
+    } catch (JSONException e) {
+      System.err.println("Exception: " + e.getMessage());
+      callback.error(e.getMessage());
+    }
+  }
+
   private void findEvents(JSONArray args) {
     if (args.length() == 0) {
       System.err.println("Exception: No Arguments passed");
@@ -644,6 +676,49 @@ public class Calendar extends CordovaPlugin {
             }
           } catch (JSONException e) {
             e.printStackTrace();
+          }
+        }
+      });
+    } catch (Exception e) {
+      Log.e(LOG_TAG, "Error creating event. Invoking error callback.", e);
+      callback.error(e.getMessage());
+    }
+  }
+
+  private void modifyEventWithId(JSONArray args) {
+    if (!calendarPermissionGranted(Manifest.permission.WRITE_CALENDAR)) {
+      requestWritePermission(PERMISSION_REQCODE_MODIFY_EVENT_WITH_ID);
+      return;
+    }
+
+    try {
+      final JSONObject argObject = args.getJSONObject(0);
+      final JSONObject argOptionsObject = argObject.getJSONObject("options");
+
+      cordova.getThreadPool().execute(new Runnable() {
+        @Override
+        public void run() {
+          try {
+            final boolean modifyResult = getCalendarAccessor().modifyEventWithId(
+                argObject.getInt("id"),
+                null,
+                getPossibleNullString("title", argObject),
+                argObject.getLong("startTime"),
+                argObject.getLong("endTime"),
+                getPossibleNullString("notes", argObject),
+                getPossibleNullString("location", argObject),
+                getPossibleNullString("recurrence", argOptionsObject),
+                argOptionsObject.optInt("recurrenceInterval"),
+                argOptionsObject.optLong("recurrenceEndTime"),
+                argOptionsObject.optInt("calendarId", 1),
+                getPossibleNullString("url", argOptionsObject));
+
+            PluginResult res = new PluginResult(PluginResult.Status.OK, modifyResult);
+            res.setKeepCallback(true);
+            callback.sendPluginResult(res);
+          } catch (JSONException e) {
+            Log.e(LOG_TAG, "Error creating event. Invoking error callback.", e);
+            callback.error(e.getMessage());
           }
         }
       });
