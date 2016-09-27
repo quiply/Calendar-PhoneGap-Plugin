@@ -513,6 +513,7 @@ public abstract class AbstractCalendarAccessor {
       }
     }
     values.put(Events.DESCRIPTION, description);
+    values.put(Events.HAS_ALARM, firstReminderMinutes > -1 || secondReminderMinutes > -1 ? 1 : 0);
     if (calendarId != null) {
       values.put(Events.CALENDAR_ID, calendarId);
     }
@@ -527,31 +528,7 @@ public abstract class AbstractCalendarAccessor {
       }
     }
 
-    String createdEventID = null;
-    try {
-      Uri uri = cr.insert(eventsUri, values);
-      createdEventID = uri.getLastPathSegment();
-      Log.d(LOG_TAG, "Created event with ID " + createdEventID);
-
-      if (firstReminderMinutes > -1) {
-        ContentValues reminderValues = new ContentValues();
-        reminderValues.put("event_id", Long.parseLong(uri.getLastPathSegment()));
-        reminderValues.put("minutes", firstReminderMinutes);
-        reminderValues.put("method", 1);
-        cr.insert(Uri.parse(CONTENT_PROVIDER + CONTENT_PROVIDER_PATH_REMINDERS), reminderValues);
-      }
-
-      if (secondReminderMinutes > -1) {
-        ContentValues reminderValues = new ContentValues();
-        reminderValues.put("event_id", Long.parseLong(uri.getLastPathSegment()));
-        reminderValues.put("minutes", secondReminderMinutes);
-        reminderValues.put("method", 1);
-        cr.insert(Uri.parse(CONTENT_PROVIDER + CONTENT_PROVIDER_PATH_REMINDERS), reminderValues);
-      }
-    } catch (Exception e) {
-      Log.e(LOG_TAG, "Creating reminders failed, ignoring since the event was created.", e);
-    }
-    return createdEventID;
+    return values;
   }
 
   @SuppressWarnings("MissingPermission") // already requested in calling method
