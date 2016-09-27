@@ -513,7 +513,6 @@ public abstract class AbstractCalendarAccessor {
       }
     }
     values.put(Events.DESCRIPTION, description);
-    values.put(Events.HAS_ALARM, firstReminderMinutes > -1 || secondReminderMinutes > -1 ? 1 : 0);
     if (calendarId != null) {
       values.put(Events.CALENDAR_ID, calendarId);
     }
