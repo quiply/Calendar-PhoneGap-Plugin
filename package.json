@@ -1,9 +1,9 @@
 {
-  "name": "cordova-plugin-calendar",
-  "version": "4.5.3",
+  "name": "cordova-plugin-calendar-quiply",
+  "version": "1.0.0",
   "description": "This plugin allows you to manipulate the native calendar.",
   "cordova": {
-    "id": "cordova-plugin-calendar",
+    "id": "cordova-plugin-calendar-quiply",
     "platforms": [
       "ios",
       "android"
